@@ -22,6 +22,11 @@ module Perf
   class ListCounts
     DEFERRED_MODES = %w(async none).freeze
 
+    # is MADEK_PERF_LIST_COUNTS set to a deferred mode at all? (gates the `list[count]` param)
+    def self.deferred_setting?
+      DEFERRED_MODES.include?(MadekPerf.value(:list_counts, 'sync').to_s.strip.downcase)
+    end
+
     # 'sync' | 'async' | 'none'
     def self.mode(user, deferrable)
       return 'sync' unless user.nil? && deferrable
