@@ -24,6 +24,9 @@ module AnonymousMarkupCacheHelper
   # props are given as a block: `react_cached_for_anonymous(name, component) { props }`
   def react_cached_for_anonymous(cache_name, name, &props)
     return react(name, props.call) unless current_user.nil? && react_prerender?
+    if (key = Perf::AnonCaches.markup_key(cache_name, request.path)) # MADEK_PERF_ANON_CACHES: TTL key, props only built on a miss
+      return cached_anonymous_markup(key, name, expires_in: Perf::AnonCaches.ttl.seconds, &props)
+    end
     props_hash = props.call
     key = [
       'react-anon', cache_name, I18n.locale, request.path,

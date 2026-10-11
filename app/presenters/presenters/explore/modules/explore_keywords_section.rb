@@ -3,8 +3,9 @@ module Presenters
     module Modules
       class ExploreKeywordsSection < Presenter
 
-        def initialize(limit: 24)
+        def initialize(limit: 24, user: nil)
           @limit = limit
+          @user = user
         end
 
         def empty?
@@ -38,7 +39,10 @@ module Presenters
             title: I18n.t(:explore_keywords_section_title),
             url: explore_keywords_path,
 
-            list: keywords.with_usage_count.map do |keyword|
+            # MADEK_PERF_ANON_CACHES (default off = upstream): keyword usage counts cached for anonymous visitors (TTL, per process).
+            # Measured: -22 % CPU per request, -46 % p95 (with the other query fixes) in a crawler-weighted benchmark on production-shaped data
+            # (maintainers' perf notes, 2026-10). Implementation: app/lib/perf/anon_caches.rb.
+            list: Perf::AnonCaches.fetch(:keyword_stats, @limit, user: @user) { keywords.with_usage_count.to_a }.map do |keyword|
               {
                 url: prepend_url_context(
                   explore_catalog_category_path('madek_core:keywords')
