@@ -44,6 +44,8 @@ module UiHelper
   def react(name, props = {}, opts = {})
     defaults = { prerender: !params.permit(:___norender).present? }
     opts = defaults.merge(opts)
+    with_auth_token = opts.delete(:auth_token) != false # `false`: markup shared between visitors
+    for_url = opts.delete(:for_url) || request.original_fullpath
     maybe_presenter = props[:get]
     if maybe_presenter.is_a?(Presenter)
       # NOTE: all of the queries happen here:
@@ -51,7 +53,7 @@ module UiHelper
     end
     # inject route + auth token for all "top-level" components (aka Views)
     props = props.merge(
-      authToken: form_authenticity_token, for_url: request.original_fullpath)
+      authToken: (form_authenticity_token if with_auth_token), for_url: for_url)
     react_component("UI.#{name}", props, opts)
   end
 

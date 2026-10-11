@@ -123,8 +123,8 @@ module Presenters
           lambda_coerce_sort_order = lambda { |order| coerce_sort_order(order) }
           DEFAULT_LIST_CONFIG.merge(list_conf) # combine with given config…
             .instance_eval do |conf| # coerce types…
-              conf.merge(page: conf[:page].to_i, 
-                         per_page: conf[:per_page].to_i, 
+              conf.merge(page: [conf[:page].to_i, 1].max,
+                         per_page: conf[:per_page].to_i < 1 ? DEFAULT_LIST_CONFIG[:per_page] : conf[:per_page].to_i,
                          order: lambda_coerce_sort_order.call(conf[:order]))
             end
         end

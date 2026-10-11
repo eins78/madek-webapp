@@ -1,5 +1,7 @@
 :ruby
-  cache_key = [@app_layout_data.user_menu.hash, session[:_csrf_token]].join('/')
+  # `react_prerender?` in the key: a `?___norender=1` request must not store
+  # the unrendered placeholder for later requests of the same session.
+  cache_key = [@app_layout_data.user_menu.hash, session[:_csrf_token], react_prerender?].join('/')
 
 -# `capture` together with low-level caching is needed to avoid template render error.
 = capture do 

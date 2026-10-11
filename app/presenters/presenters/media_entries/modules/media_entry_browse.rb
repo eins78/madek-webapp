@@ -29,37 +29,45 @@ module Presenters
           @_keywords_by_id ||= related_entries_by_shared_keywords
             .map { |d| d['keyword_ids'].split(',') }
             .flatten.uniq
-            .map do |id|
-              [id, Presenters::Keywords::KeywordIndex.new(Keyword.find(id))]
+            .yield_self { |ids| find_all_by_ids(Keyword, ids) }
+            .map do |id, keyword|
+              [id, Presenters::Keywords::KeywordIndex.new(keyword)]
             end.compact.to_h
         end
 
         def meta_keys_by_id
           @_meta_keys_by_id ||= keywords_by_id
             .values.map(&:meta_key_id).flatten.uniq
-            .map do |id|
-              [id, Presenters::MetaKeys::MetaKeyCommon.new(MetaKey.find(id))]
+            .yield_self { |ids| find_all_by_ids(MetaKey, ids) }
+            .map do |id, meta_key|
+              [id, Presenters::MetaKeys::MetaKeyCommon.new(meta_key)]
             end.to_h
         end
 
         def vocabularies_by_id
           @_vocabularies_by_id ||= meta_keys_by_id
             .values.map(&:vocabulary_id).flatten.uniq
-            .map do |id|
-              voc = Vocabulary.find(id)
+            .yield_self { |ids| find_all_by_ids(Vocabulary, ids) }
+            .map do |id, voc|
               [id, Presenters::Vocabularies::VocabularyCommon.new(voc)]
             end.to_h
         end
 
         # PERF: only dump needed data (only `image_url`, `url`!)
+        # PERF: the related entries are loaded in one query with their media
+        # file + previews (before: 3 queries per entry)
         def entries_by_id
-          @_entries_by_id ||= related_entries_by_shared_keywords
-            .map do |dat|
+          return @_entries_by_id if @_entries_by_id
           wanted_props = %i(uuid url image_url media_type)
-          e = MediaEntry.find_by_id(dat['id'])
-          raise ActiveRecord::RecordNotFound unless e
-          p = Presenters::MediaEntries::MediaEntryIndex.new(e, @user)
-          [e.id, p.dump(sparse_spec: wanted_props.map { |k| [k, {}] }.to_h)]
+          entries = MediaEntry
+            .where(id: related_entries_by_shared_keywords.map { |d| d['id'] })
+            .includes(media_file: :previews)
+            .index_by(&:id)
+          @_entries_by_id = related_entries_by_shared_keywords.map do |dat|
+            e = entries[dat['id']]
+            raise ActiveRecord::RecordNotFound unless e
+            p = Presenters::MediaEntries::MediaEntryIndex.new(e, @user)
+            [e.id, p.dump(sparse_spec: wanted_props.map { |k| [k, {}] }.to_h)]
           end.to_h
         end
 
@@ -68,6 +76,17 @@ module Presenters
         end
 
         private
+
+        # [[id, record], ...] in the order of `ids`, one query; raises like
+        # `find` if a record is missing
+        def find_all_by_ids(klass, ids)
+          by_id = klass.where(id: ids).index_by { |r| r.id.to_s }
+          ids.map do |id|
+            record = by_id[id.to_s]
+            raise ActiveRecord::RecordNotFound, "#{klass} #{id}" unless record
+            [id, record]
+          end
+        end
 
         def ignored_keywords
           return @_ignored_keywords if @_ignored_keywords

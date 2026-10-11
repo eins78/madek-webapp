@@ -2,10 +2,14 @@
   content_for(:title_head) { @get.title }
   render('media_entries/_show/head_meta_tags')
 
+  # PERF: dumped once; the layout reuses it for the export/ask_delete modal (it used
+  # to dump the same presenter a second time, all queries + Ruby twice)
+  @get_dump = @get.is_a?(Presenter) ? @get.dump : @get
+
   if @media_entry.try(:deleted_at).try(:present?)
     content_for(:app_alerts) do
       component('alert', level: 'error', text: t(:media_entry_deleted))
     end
   end
 
-= react('Views.BaseTmpReact', { get: @get, action_name: action_name })
+= react('Views.BaseTmpReact', { get: @get_dump, action_name: action_name })

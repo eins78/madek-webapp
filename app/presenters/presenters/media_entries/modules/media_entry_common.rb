@@ -26,7 +26,8 @@ module Presenters
         end
 
         def editable
-          policy_for(@user).meta_data_update?
+          return @editable if defined?(@editable) # memo, `invalid_meta_data` reads it too
+          @editable = policy_for(@user).meta_data_update?
         end
 
         def permissions_editable
@@ -45,6 +46,9 @@ module Presenters
           # NOTE: this is needed to determine if batch editing is allowed
           # In general, we can check for drafts if publishing is possible;
           # and for non-drafts if the validation changed since publishing!
+          # The client reads it only as `editable && !invalid_meta_data`, so skip
+          # `valid?` (several queries per list item) if the entry is not editable.
+          return unless editable
           true unless @app_resource.valid?
         end
 

@@ -22,8 +22,10 @@ module Presenters
             sibling_collections.any?
         end
 
+        # memoized: a list presenter runs its queries on `new`, and the show
+        # presenters read these lists for the tabs and again for the dump
         def parent_collections
-          Presenters::Shared::MediaResource::MediaResources.new(
+          @parent_collections ||= Presenters::Shared::MediaResource::MediaResources.new(
             @user_scopes[:parent_collections],
             @user,
             can_filter: true,
@@ -35,7 +37,7 @@ module Presenters
         def sibling_collections
           # TODO: exclusion of self from siblings should be done
           # in the model?!
-          Presenters::Shared::MediaResource::MediaResources.new(
+          @sibling_collections ||= Presenters::Shared::MediaResource::MediaResources.new(
             @user_scopes[:sibling_collections],
             @user,
             can_filter: true,
