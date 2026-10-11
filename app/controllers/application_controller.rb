@@ -19,6 +19,12 @@ class ApplicationController < ActionController::Base
   include Errors
   include BannerMessage
   include TransactionHealing
+  # MADEK_PERF_DONT_CACHE_PRESENTATION_PARAMS (default off = upstream): anonymous HTML requests with
+  # list[layout|show_filter|accordion] get a 302 to the URL without them (values in the fragment, plus a
+  # cookie for visitors without JS). Measured: about −20 % CPU per request in a crawler-weighted benchmark
+  # on production-shaped data (maintainers' perf notes, 2026-10).
+  # Implementation: app/controllers/concerns/perf/presentation_params.rb.
+  include Perf::PresentationParams if MadekPerf.on?(:dont_cache_presentation_params)
 
   before_action :notify_if_session_expiring_soon
 

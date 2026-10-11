@@ -37,6 +37,7 @@ import railsFormPut from '../../lib/form-put-with-errors.js'
 import { resourceTypeSwitcher } from '../lib/resource-type-switcher.jsx'
 
 import resourceListParams from '../../shared/resource_list_params.js'
+import { presentationFragmentMounted } from '../../perf/presentation-fragment.js'
 
 import { Icon, Link } from '../ui-components/index.js'
 import BoxToolBar from '../ui-components/ResourcesBox/BoxToolBar.jsx'
@@ -217,6 +218,7 @@ class MediaResourcesBox extends Component {
       isClient: true,
       config: resourceListParams(window.location)
     })
+    presentationFragmentMounted(this, window.location) // perf P: `list` layout from the fragment
 
     return this.triggerRootEvent({
       action: 'mount'

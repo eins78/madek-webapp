@@ -1,8 +1,9 @@
 import { curry, get, includes, map, merge, pick } from 'lodash-es'
 import qs from 'qs'
+import { withPresentationFragment } from '../perf/presentation-fragment.js'
 
 export default function (location) {
-  const query = qs.parse(location.search.slice(1))
+  const query = withPresentationFragment(qs.parse(location.search.slice(1)), location)
   const base = 'list'
   const allowed = ['layout', 'filter', 'show_filter', 'accordion', 'page', 'per_page', 'order']
   const coerced_types = { bools: ['show_filter'], jsons: ['filter', 'accordion'] }
