@@ -55,5 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 })
 
+require('./perf/sign-in-return-to.js')
+
 // DEV:
 // require('./developer-tools.js')
