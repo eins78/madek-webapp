@@ -18,8 +18,11 @@ module Presenters
         @sub_filters = sub_filters || {}
       end
 
+      # MADEK_PERF_ANON_CACHES (default off = upstream): filter-sidebar aggregates (3 sections) cached per scope for anonymous visitors.
+      # Measured: -22 % CPU per request, -46 % p95 (with the other query fixes) in a crawler-weighted benchmark on production-shaped data
+      # (maintainers' perf notes, 2026-10). Implementation: app/lib/perf/anon_caches.rb.
       def section_group_media_files
-        media_files(@scope, @tree)
+        Perf::AnonCaches.fetch(:filter_media_files, @scope, user: @user) { media_files(@scope, @tree) }
       end
 
       def section_group_meta_data
@@ -27,7 +30,7 @@ module Presenters
       end
 
       def section_group_permissions
-        permissions(@scope)
+        Perf::AnonCaches.fetch(:filter_permissions, @scope, user: @user) { permissions(@scope) }
       end
 
       private
@@ -303,9 +306,10 @@ module Presenters
         ui_context_list = _contexts_for_dynamic_filters # from VocabularyConfig
         return unless ui_context_list.present?
         ui_context_list_ids = ui_context_list.map(&:id)
-        values = FilterBarQuery.get_metadata_unsafe(
+        # MADEK_PERF_ANON_CACHES: see `section_group_media_files`
+        values = Perf::AnonCaches.fetch(:filter_meta_data, scope, sub_filters, ui_context_list_ids, user: @user) { FilterBarQuery.get_metadata_unsafe(
           @resource_type, scope, ui_context_list, @user, sub_filters
-        )
+        ) }
         values
           .group_by { |v| v['context_id'] }
           .sort_by { |bundle| ui_context_list_ids.index(bundle[0]) }

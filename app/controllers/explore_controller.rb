@@ -18,7 +18,7 @@ class ExploreController < ApplicationController
   end
 
   def keywords
-    @get = Presenters::Explore::Modules::ExploreKeywordsSection.new(limit: 300)
+    @get = Presenters::Explore::Modules::ExploreKeywordsSection.new(limit: 300, user: current_user)
     respond_with @get, template: 'application/keywords'
   end
 

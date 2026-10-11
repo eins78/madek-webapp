@@ -6,6 +6,17 @@ describe AnonymousMarkupCacheHelper do
   let(:props) { { resources: [{ uuid: 'abc', title: 'Title' }] } }
   let(:component) { 'Views.explore.partials.ThumbnailResourceList' }
 
+  # MADEK_PERF_ANON_CACHES off unless a context turns it on
+  around :each do |example|
+    saved = ENV['MADEK_PERF_ANON_CACHES']
+    begin
+      ENV.delete('MADEK_PERF_ANON_CACHES')
+      example.run
+    ensure
+      ENV['MADEK_PERF_ANON_CACHES'] = saved
+    end
+  end
+
   before :each do
     helper.extend(UiHelper)
     allow(Rails).to receive(:cache).and_return(store)
@@ -72,6 +83,43 @@ describe AnonymousMarkupCacheHelper do
     render_cached
     render_cached
     expect(@renders).to eq 2
+  end
+
+  context 'with MADEK_PERF_ANON_CACHES on' do
+    around :each do |example|
+      saved = ENV['MADEK_PERF_ANON_CACHES']
+      begin
+        ENV['MADEK_PERF_ANON_CACHES'] = '1'
+        example.run
+      ensure
+        ENV['MADEK_PERF_ANON_CACHES'] = saved
+      end
+    end
+
+    it 'builds the props only on a miss and keeps the anonymous rendering rules' do
+      built = 0
+      2.times do
+        html = helper.react_cached_for_anonymous('root-list/latest', component) do
+          built += 1
+          props
+        end
+        expect(html).to include '"authToken":null'
+      end
+      expect(built).to eq 1
+      expect(@renders).to eq 1
+    end
+
+    it 'does not store unrendered or fallback markup' do
+      helper.request.env[AnonymousMarkupCacheHelper::SSR_FALLBACK_ENV_KEY] = true
+      render_cached
+      helper.request.env.delete(AnonymousMarkupCacheHelper::SSR_FALLBACK_ENV_KEY)
+      controller.params = ActionController::Parameters.new(___norender: '1')
+      render_cached
+      controller.params = ActionController::Parameters.new({})
+      render_cached
+      render_cached
+      expect(@renders).to eq 3
+    end
   end
 
   it 'keeps the token for plain `react` calls' do

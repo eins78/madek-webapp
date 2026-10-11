@@ -44,7 +44,7 @@ module Presenters
       end
 
       def keywords_section
-        @keywords_section ||= Presenters::Explore::Modules::ExploreKeywordsSection.new
+        @keywords_section ||= Presenters::Explore::Modules::ExploreKeywordsSection.new(user: @user)
       end
 
       def vocabularies_section
