@@ -18,6 +18,9 @@ module Presenters
         }
       end
 
+      # PERF: the section presenters are memoized: `root.haml` asks each one
+      # for `empty?` and then renders it, and every new instance re-ran its
+      # queries (`latest_section` was built 2x, its `content` 3x per request).
       def sections
         [
           catalog_section,
@@ -29,23 +32,23 @@ module Presenters
       end
 
       def catalog_section
-        Presenters::Explore::Modules::ExploreCatalogSection.new(@settings)
+        @catalog_section ||= Presenters::Explore::Modules::ExploreCatalogSection.new(@settings)
       end
 
       def latest_section
-        Presenters::Explore::Modules::ExploreLatestSection.new(@user, @settings)
+        @latest_section ||= Presenters::Explore::Modules::ExploreLatestSection.new(@user, @settings)
       end
 
       def featured_content_section
-        Presenters::Explore::Modules::ExploreFeaturedContentSection.new(@user, @settings)
+        @featured_content_section ||= Presenters::Explore::Modules::ExploreFeaturedContentSection.new(@user, @settings)
       end
 
       def keywords_section
-        Presenters::Explore::Modules::ExploreKeywordsSection.new
+        @keywords_section ||= Presenters::Explore::Modules::ExploreKeywordsSection.new
       end
 
       def vocabularies_section
-        Presenters::Explore::Modules::ExploreVocabulariesSection.new(@user, @settings)
+        @vocabularies_section ||= Presenters::Explore::Modules::ExploreVocabulariesSection.new(@user, @settings)
       end
 
       def show_login

@@ -16,6 +16,12 @@ module Presenters
         end
 
         def content
+          # memoized: the partials read `content` several times
+          return @content if defined?(@content)
+          @content = _content
+        end
+
+        def _content
           return if empty?
           {
             type: 'thumbnail',
@@ -26,6 +32,8 @@ module Presenters
             show_title: true
           }
         end
+
+        private :_content
 
         private
 
@@ -57,10 +65,11 @@ module Presenters
         end
 
         def featured_set
-          unless (feat = @settings.featured_set_id.presence)
-            return
-          end
-          Collection.find_by_id(feat)
+          return @featured_set if defined?(@featured_set)
+          @featured_set = \
+            if (feat = @settings.featured_set_id.presence)
+              Collection.find_by_id(feat)
+            end
         end
 
         def featured_set_content
@@ -72,14 +81,16 @@ module Presenters
 
               order = allowed_sorting(set)
 
-              media_entries = auth_policy_scope(@user, set.media_entries).to_a
-              collections = auth_policy_scope(@user, set.collections).to_a
-              ids = (media_entries + collections).map(&:id)
+              # PERF: subqueries instead of loading every member of the set
+              # (and then `WHERE id IN (<all their ids>)`); only 6 are shown.
+              media_entries = auth_policy_scope(@user, set.media_entries)
+              collections = auth_policy_scope(@user, set.collections)
 
               load_concrete_models(
-                MediaResource.where(id: ids)
-                    .custom_order_by(order)
-                    .limit(6)
+                MediaResource
+                  .where_in([media_entries, collections].map { |s| s.reorder(nil) })
+                  .custom_order_by(order)
+                  .limit(6)
               )
             end
         end

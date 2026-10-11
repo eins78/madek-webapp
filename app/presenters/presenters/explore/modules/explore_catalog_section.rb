@@ -12,6 +12,12 @@ module Presenters
         end
 
         def content
+          # memoized: the partials read `content` several times
+          return @content if defined?(@content)
+          @content = _content
+        end
+
+        def _content
           return if empty?
           {
             type: 'catalog',
@@ -21,6 +27,8 @@ module Presenters
             show_title: true
           }
         end
+
+        private :_content
 
         private
 
