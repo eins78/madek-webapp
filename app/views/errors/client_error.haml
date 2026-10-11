@@ -48,4 +48,4 @@
 
       .ui-modal-footer
         .ui-actions
-          .title-xs= Time.now.getutc.to_s
+          .title-xs= Time.now.getutc.to_s unless controller.try(:anonymous_http_cache_candidate?)
