@@ -51,7 +51,8 @@ module UiHelper
     end
     # inject route + auth token for all "top-level" components (aka Views)
     props = props.merge(
-      authToken: form_authenticity_token, for_url: request.original_fullpath)
+      authToken: (form_authenticity_token unless controller.try(:omit_authenticity_token?)),
+      for_url: request.original_fullpath)
     react_component("UI.#{name}", props, opts)
   end
 

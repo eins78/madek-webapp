@@ -19,6 +19,10 @@ class ApplicationController < ActionController::Base
   include Errors
   include BannerMessage
   include TransactionHealing
+  # MADEK_PERF_ANON_HTTP_CACHE (default off = upstream): anonymous GET responses carry no CSRF token and no
+  # session cookie and are marked `public` for shared caches. Measured: CPU per request unchanged (header
+  # change); makes a shared cache in front correct (maintainers' perf notes, 2026-10). See concerns/perf/.
+  include Perf::AnonHttpCache if MadekPerf.on?(:anon_http_cache)
 
   before_action :notify_if_session_expiring_soon
 

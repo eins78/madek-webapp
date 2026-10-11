@@ -29,7 +29,7 @@
     = stylesheet_link_tag 'application', media: 'all'
     = content_for(:style_head)
 
-    = csrf_meta_tag
+    = csrf_meta_tag unless controller.try(:omit_authenticity_token?)
 
     -# optional extra tags for head:
     = content_for(:head)
