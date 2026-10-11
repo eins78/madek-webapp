@@ -107,6 +107,7 @@ module Presenters
           item_type: 'MediaResources',
           can_filter: true,
           list_conf: @children_list_conf,
+          count_deferrable: true, # MADEK_PERF_LIST_COUNTS: main list
           load_meta_data: @load_meta_data,
           disable_file_search: @type_filter != 'entries',
           only_filter_search: !['entries', 'collections'].include?(@type_filter),

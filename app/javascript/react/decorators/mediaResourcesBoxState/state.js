@@ -62,6 +62,7 @@ function nextState({ state = {}, context = {}, event, triggerEvent }) {
         listMetadata: resource.list_meta_data
       })),
       loadingNextPage: false,
+      reachedEnd: false,
       selectedResources: [],
       currentRequestSeriesId: Math.random()
     }),
@@ -74,12 +75,18 @@ function nextState({ state = {}, context = {}, event, triggerEvent }) {
     'load-next-page': () => ({
       ...state,
       loadingNextPage: true,
+      reachedEnd: event.clear ? false : state.reachedEnd,
       resourceStates: event.clear ? [] : resourceStates,
       currentRequestSeriesId: event.clear ? Math.random() : state.currentRequestSeriesId
     }),
     'page-loaded': () => ({
       ...state,
       loadingNextPage: false,
+      // a short page means there is no next one (MADEK_PERF_LIST_COUNTS: total unknown, see BoxPaginationNav)
+      reachedEnd:
+        event.currentRequestSeriesId === state.currentRequestSeriesId
+          ? !event.resources || event.resources.length < context.pageSize
+          : state.reachedEnd,
       resourceStates: [].concat(
         resourceStates,
         event.currentRequestSeriesId === state.currentRequestSeriesId

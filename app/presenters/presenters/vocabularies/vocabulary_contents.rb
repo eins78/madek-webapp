@@ -40,6 +40,7 @@ module Presenters
           @user,
           can_filter: true,
           list_conf: @list_conf,
+          count_deferrable: true, # MADEK_PERF_LIST_COUNTS: main list
           content_type: content_type,
           sub_filters: @sub_filters
         )

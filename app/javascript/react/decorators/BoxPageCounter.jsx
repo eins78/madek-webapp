@@ -96,8 +96,8 @@ class BoxPageCounter extends React.Component {
         <div style={{ display: 'inline-block' }}>
           {t('pagination_prefix')}
           {page}
-          {t('pagination_infix')}
-          {totalPages}
+          {totalPages != null && t('pagination_infix') /* MADEK_PERF_LIST_COUNTS: total unknown */}
+          {totalPages != null && totalPages}
           {t('pagination_postfix')}
         </div>
         {showSelectPage()}

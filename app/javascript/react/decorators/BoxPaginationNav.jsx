@@ -6,6 +6,7 @@ import Button from '../ui-components/Button.jsx'
 import ButtonGroup from '../ui-components/ButtonGroup.jsx'
 import Waypoint from 'react-waypoint'
 import Preloader from '../ui-components/Preloader.jsx'
+import { unknownTotalNav } from '../../perf/listCounts.js'
 
 class BoxPaginationNav extends React.Component {
   constructor(props) {
@@ -83,6 +84,13 @@ class BoxPaginationNav extends React.Component {
 
     var page = Math.ceil(this.props.resources.length / pageSize)
     var totalPages = staticPagination.total_pages
+
+    // MADEK_PERF_LIST_COUNTS: total deferred/omitted, paginate by prev/next (app/javascript/perf/listCounts.js)
+    var unknownTotal = unknownTotalNav(this.props)
+    if (unknownTotal !== undefined) {
+      if (!unknownTotal) return null
+      return unknownTotal === 'autoscroll' ? this.renderAutoscroll() : this.renderFallback()
+    }
 
     // autoscroll:
     if (this.props.isClient) {
