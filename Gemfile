@@ -32,6 +32,9 @@ gem 'equivalent-xml'
 # The rest
 gem 'cider_ci-open_session', '>= 1.0.0', '< 2.0.0'
 gem 'execjs'
+# MADEK_PERF_SSR_MINI_RACER (default off = upstream): in-process V8 for React server rendering, see
+# config/initializers/perf_ssr.rb. The prebuilt V8 needs a recent glibc (e.g. Debian 13).
+gem 'mini_racer', '~> 0.22', require: false
 gem 'exiftool_vendored'
 gem 'git', '~> 1.13'
 gem 'json', '>= 2.15.2.1'
