@@ -41,7 +41,8 @@ describe MediaEntriesController do
     it 'has the total in the page' do
       body = get_index(session: session_user ? { user_id: user.id } : {})
       pagination = body[:pagination]
-      expect(pagination.keys).to eq [:prev, :next, :total_count, :total_pages]
+      # the presenter dump omits nil values: page 1 has no `prev` key (same as upstream)
+      expect(pagination.keys).to eq [:next, :total_count, :total_pages]
       if session_user
         expect(pagination[:total_count]).to be_a Integer
       else
@@ -60,9 +61,8 @@ describe MediaEntriesController do
 
     it 'anonymous: page without total, prev/next intact' do
       body = get_index
-      expect(body[:pagination]).to eq(
-        prev: nil, next: { page: 2 }, total_count: nil, total_pages: nil,
-        count_mode: 'async')
+      # nil values (prev, total_count, total_pages) are omitted by the presenter dump
+      expect(body[:pagination]).to eq(next: { page: 2 }, count_mode: 'async')
       expect(body[:resources].length).to be per_page
       expect(body[:any?]).to be true
       expect(body[:empty?]).to be false
@@ -80,7 +80,8 @@ describe MediaEntriesController do
     it 'anonymous: empty search still responds' do
       body = get_index(list: { filter: { search: 'no-such-term-zzz' }.to_json })
       expect(body[:resources]).to eq []
-      expect(body[:pagination]).to include(prev: nil, next: nil, total_pages: nil)
+      expect(body[:pagination].values_at(:prev, :next, :total_pages)).to all(be_nil)
+      expect(body[:pagination][:count_mode]).to eq 'async'
       expect(body[:empty?]).to be true
     end
 
@@ -95,7 +96,8 @@ describe MediaEntriesController do
     it 'anonymous: no total, also not with `list[count]=true`' do
       [{}, { count: 'true' }].each do |list|
         pagination = get_index(list: list)[:pagination]
-        expect(pagination).to include(total_count: nil, total_pages: nil, count_mode: 'none')
+        expect(pagination.values_at(:total_count, :total_pages)).to all(be_nil)
+        expect(pagination[:count_mode]).to eq 'none'
         expect(pagination[:next]).to eq(page: 2)
       end
     end
