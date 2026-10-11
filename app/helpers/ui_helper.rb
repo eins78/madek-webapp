@@ -41,8 +41,13 @@ module UiHelper
   # # misc UI helpers
 
   # React Components (proxy to view helper from `react_rails` gem w/ config)
+  # MADEK_PERF_SSR_FALLBACK (default off = upstream): a failed server render client-renders that
+  # component, no error page; MADEK_PERF_SSR_FALLBACK_ANONYMOUS=never skips SSR for anonymous users.
+  # Measured (never): about −61 % CPU per request in a crawler-weighted benchmark on production-shaped
+  # data (maintainers' perf notes, 2026-10). Implementation: app/helpers/perf/ssr_fallback_helper.rb.
   def react(name, props = {}, opts = {})
     defaults = { prerender: !params.permit(:___norender).present? }
+    defaults = { prerender: perf_ssr_prerender? } if MadekPerf.on?(:ssr_fallback)
     opts = defaults.merge(opts)
     maybe_presenter = props[:get]
     if maybe_presenter.is_a?(Presenter)
@@ -52,6 +57,7 @@ module UiHelper
     # inject route + auth token for all "top-level" components (aka Views)
     props = props.merge(
       authToken: form_authenticity_token, for_url: request.original_fullpath)
+    return perf_react_component("UI.#{name}", props, opts) if MadekPerf.on?(:ssr_fallback)
     react_component("UI.#{name}", props, opts)
   end
 
