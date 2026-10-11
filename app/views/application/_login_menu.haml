@@ -1,7 +1,12 @@
 :ruby
   lang_fragment = params[:lang].nil? ? "" : "&lang=#{CGI.escape(params[:lang])}"
   login_link = "/auth/sign-in?return-to=#{CGI.escape(request.original_fullpath)}" + lang_fragment
+  # MADEK_PERF_SIGN_IN_RETURN_TO=path|none (default unset = upstream): anonymous pages link to the sign-in
+  # page with the current path only (or none); JS restores the full URL on click.
+  # Measured: one sign-in URL per page instead of one per list variant (analytic, crawler trace)
+  # (maintainers' perf notes, 2026-10). Implementation: app/lib/perf/sign_in_link.rb
+  login_link = Perf::SignInLink.for(request, params) if MadekPerf.value(:sign_in_return_to, nil)
 
-= component('button.tertiary', href: login_link) do
+= component('button.tertiary', link: login_link) do
   = component('icon.user')
   = t(:user_menu_login_btn)
