@@ -7,8 +7,9 @@ module Presenters
         @user = user
       end
 
+      # only what the `list` layout renders (see `MetaDataListDetails`)
       def meta_data
-        Presenters::MetaData::MetaDataShow.new(@app_resource, @user)
+        Presenters::MetaData::MetaDataListDetails.new(@app_resource, @user)
       end
 
       def relation_counts
