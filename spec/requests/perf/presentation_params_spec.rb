@@ -124,7 +124,8 @@ describe 'Perf::PresentationParams', type: :request do
 
   context 'toggle on, preference cookie (no-JS visitors)' do
     def get_with_cookie(value, path = '/entries')
-      get path, headers: html.merge('Cookie' => "madek_list=#{value}")
+      # `html` is a block-local of the describe body, not visible inside `def`
+      get path, headers: { 'Accept' => 'text/html', 'Cookie' => "madek_list=#{value}" }
     end
 
     it 'renders with the cookie presentation, private, without Set-Cookie' do
