@@ -38,7 +38,8 @@ module Presenters
             json_path: nil,
             content_type: nil,
             sub_filters: nil,
-            info_header: nil)
+            info_header: nil,
+            count_deferrable: false)
           fail 'missing config!' unless list_conf or list_conf[:for_url].present?
           @user = user
           @scope = scope
@@ -49,6 +50,13 @@ module Presenters
           @can_filter = can_filter
           @conf = build_config(list_conf)
           @with_count = with_count
+          # MADEK_PERF_LIST_COUNTS (unset/sync = upstream): `async` leaves the total out of the page for
+          # anonymous visitors and lets the list fetch it afterwards; `none` omits it. Saves one COUNT over
+          # the whole filtered scope per list request and per autoscroll page; without JavaScript,
+          # pagination works by previous/next. Not separately benchmarked (maintainers' perf notes, 2026-10).
+          # Implementation: app/lib/perf/list_counts.rb. Only main lists opt in (`count_deferrable: true`).
+          @list_counts = Perf::ListCounts.new(
+            user, deferrable: count_deferrable, with_count: with_count, conf: @conf)
           @load_meta_data = load_meta_data
           @try_collections = false
           @only_filter_search = only_filter_search
@@ -67,6 +75,7 @@ module Presenters
         def any?
           # NOTE: need to ask the *unpaginated* BUT *filtered* scope!
           # NOTE: #any? triggers a weird Arel bug, do it manually:
+          return @list_counts.exists?(@selected_resources) if @list_counts.deferred? # MADEK_PERF_LIST_COUNTS
           _total_count > 0
         end
 
@@ -137,7 +146,7 @@ module Presenters
           # apply pagination and select resources
           # NOTE: total_count could be expensive, so it's optional!
           @selected_resources = select_resources(resources, config)
-          total_count = _total_count if @with_count
+          total_count = _total_count if @list_counts.count_in_request? # MADEK_PERF_LIST_COUNTS (sync: = @with_count)
 
           # apply pagination, but select "1 extra" (for building cheap pagination)
           ordered_resources = @selected_resources.custom_order_by(
@@ -189,12 +198,12 @@ module Presenters
         end
 
         def build_pagination(config, has_next_page, count)
-          { # each key is nil or contains the params needed to build link to page
+          @list_counts.pagination({ # each key is nil or contains the params needed to build link to page
             prev: ((config[:page] > 1) ? { page: (config[:page] - 1) } : nil),
             next: (has_next_page ? { page: (config[:page] + 1) } : nil),
             total_count: count, # is optional, may be nil
             total_pages: (count.to_f / config[:per_page]).ceil
-          }
+          }) # MADEK_PERF_LIST_COUNTS: unchanged in `sync`, see app/lib/perf/list_counts.rb
         end
 
         def active_record_collection?(obj)

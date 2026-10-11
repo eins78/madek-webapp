@@ -51,6 +51,7 @@ import CreateCollectionModal from '../views/My/CreateCollectionModal.jsx'
 import BoxUtil from './BoxUtil.js'
 import BoxSetUrlParams from './BoxSetUrlParams.jsx'
 import { nextState } from './mediaResourcesBoxState/state.js'
+import { fetchDeferredTotalCount, titleTotalCount } from '../../perf/listCounts.js'
 import BoxTitlebar from './BoxTitlebar.jsx'
 import BoxFilterButton from './BoxFilterButton.jsx'
 import BoxSetFallback from './BoxSetFallback.jsx'
@@ -217,6 +218,7 @@ class MediaResourcesBox extends Component {
       isClient: true,
       config: resourceListParams(window.location)
     })
+    fetchDeferredTotalCount(this) // MADEK_PERF_LIST_COUNTS=async
 
     return this.triggerRootEvent({
       action: 'mount'
@@ -780,7 +782,7 @@ class MediaResourcesBox extends Component {
 
     const boxTitleBar = () => {
       const { layout, order } = config
-      const totalCount = _get(get, 'pagination.total_count')
+      const totalCount = titleTotalCount(_get(get, 'pagination.total_count'), this.state) // MADEK_PERF_LIST_COUNTS
 
       const layouts = BoxUtil.allowedLayoutModes(this.props.disableListMode).map(layoutMode => {
         const href = BoxSetUrlParams(currentUrl, { list: { layout: layoutMode.mode } })
@@ -926,6 +928,7 @@ class MediaResourcesBox extends Component {
           staticPagination={staticPagination}
           onFetchNextPage={this.loadNextPage}
           loadingNextPage={this.state.boxState.loadingNextPage}
+          reachedEnd={this.state.boxState.reachedEnd}
           isClient={this.state.isClient}
           permaLink={BoxSetUrlParams(this._currentUrl(), currentQuery)}
           currentUrl={currentUrl}

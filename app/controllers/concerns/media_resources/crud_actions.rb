@@ -19,7 +19,7 @@ module MediaResources
 
     def index
       resources = auth_policy_scope(current_user, model_klass)
-      @get = presenterify(resources, nil)
+      @get = presenterify(resources, nil, count_deferrable: true) # MADEK_PERF_LIST_COUNTS: main list
       respond_with @get
     end
   end

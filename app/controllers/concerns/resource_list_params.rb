@@ -55,6 +55,8 @@ module ResourceListParams
                   :page, :per_page, :order, :sparse_filter, :lang]
       coerced_types = { bools: [:show_filter],
                         jsons: [:filter, :accordion] }
+      # `count`: MADEK_PERF_LIST_COUNTS=async, the client asks for the deferred total (server-only, not in the JS copy)
+      allowed << :count && coerced_types[:bools] << :count if Perf::ListCounts.deferred_setting?
 
       # NOTE: can be `nil` if base is a string (like `?list=some_string`)
       list_params = parameters.permit(base => allowed).fetch(base, {})
