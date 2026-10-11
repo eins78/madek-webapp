@@ -11,7 +11,19 @@ module Presenters
         end
 
         def resources
-          @given_resources.map do |resource|
+          @resources ||= build_resources
+        end
+
+        private
+
+        def build_resources
+          records = @given_resources.to_a
+          # PERF: same preload as the paginated lists; without it every item
+          # queried its title, subtitle, keywords and authors one by one.
+          # Used by the root/explore lists and by set highlights.
+          ::MediaResources::MetaData.preload_for_list!(
+            records.select { |r| r.is_a?(::MediaEntry) || r.is_a?(::Collection) })
+          records.map do |resource|
             presenter = presenter_by_resource_type(resource) || presenter_by_class(resource.class)
             if resource.class == Collection
               presenter.new(resource, @user, async_cover: @async_cover)
