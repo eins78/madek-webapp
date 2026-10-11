@@ -58,13 +58,20 @@ module Perf
       # runtime check as well, so the concern is inert if included with the toggle off
       MadekPerf.on?(:dont_cache_presentation_params) &&
         (request.get? || request.head?) &&
-        request.format.html? &&
+        perf_presentation_html_format? &&
         !request.query_parameters.key?('___sparse') &&
         request.headers['Authorization'].blank? &&
         request.headers[VARNISH_HEADER].blank? &&
         cookies[Madek::Constants::MADEK_SESSION_COOKIE_NAME].blank?
     rescue ActionDispatch::Http::MimeNegotiation::InvalidType
       false
+    end
+
+    # A bare `Accept: */*` (curl, some crawlers) is not an HTML format for
+    # Rails but is a page request; fold it like the Varnish variant does.
+    def perf_presentation_html_format?
+      format = request.format
+      format.html? || format.to_s == '*/*'
     end
 
     # => [kept segments (canonical brackets, original order), { key => raw value }]

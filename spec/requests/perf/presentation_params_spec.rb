@@ -60,6 +60,14 @@ describe 'Perf::PresentationParams', type: :request do
       expect(cookie).not_to match(/;\s*secure(;|\z)/i) # plain http in the test
     end
 
+    it 'treats a bare Accept: */* and a missing Accept header as HTML' do
+      get '/entries?list%5Blayout%5D=list', headers: { 'Accept' => '*/*' }
+      expect(response.status).to eq 302
+      expect(response.headers['Location']).to eq '/entries#list%5Blayout%5D=list'
+      get '/entries?list%5Blayout%5D=list', headers: { 'Accept' => nil }
+      expect(response.status).to eq 302
+    end
+
     it 'canonicalises brackets, keeps other params in order, last value wins' do
       get '/entries?lang=de&list%5blayout%5d=grid&list%5Baccordion%5D=%7B%7D' \
           '&list%5Bfilter%5D=%7B%7D&list%5Blayout%5D=tiles', headers: html
